@@ -66,3 +66,16 @@
 自己打断点跟代码理解流程。
 
 ![认证流程2.png](attach/认证流程2.png)
+
+
+## 三、扩展阅读
+
+SpringBoot 集成 Spring Security：
+
+1. 入门程序：https://blog.csdn.net/yuanlaijike/article/details/80249235
+2. 自动登录：https://blog.csdn.net/yuanlaijike/article/details/80249869
+3. 异常处理：https://blog.csdn.net/yuanlaijike/article/details/80250389
+4. 自定义表单登录：https://blog.csdn.net/yuanlaijike/article/details/80253922
+5. 权限控制：https://blog.csdn.net/yuanlaijike/article/details/80327880
+6. 登录管理：https://blog.csdn.net/yuanlaijike/article/details/84638745
+7. 认证流程：https://blog.csdn.net/yuanlaijike/article/details/84703690
