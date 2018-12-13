@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.yuanwl.domain.PersonMapper">
+
+    <!--（一对一）根据人ID找人和身份证方式1：连表查询，把查询结果按照属性、字段名映射依次赋值给对象（Person）及子对象（IdCard）。
+        这种方式只需要查询一次，比方式2快，一般情况下推荐用这个！但是，如果主子表存在相同的字段名，那查询语句就要给字段取别名，
+        如果别名太多，还不如直接用方式2
+     -->
+    <select id="getPersonWithIdCard" resultMap="PersonResultMap">
+        select p.*, i.id as i_id, i.name as i_name from person p, id_card i where p.id = i.person_id and p.id = #{id}
+    </select>
+    <!--使用resultMap映射实体类和字段之间的一一对应关系-->
+    <resultMap type="xyz.yuanwl.domain.Person" id="PersonResultMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <!--用association标签来解决对象属性的一对一的关联查询。
+            property：对象属性的名称；
+            javaType：对象属性的类型；
+         -->
+        <association property="idCard" javaType="xyz.yuanwl.domain.IdCard">
+            <!--下面是这个对象属性的属性和表字段的隐射配置-->
+            <id property="id" column="i_id"/><!--注意这里要用字段别名，否则容易赋值错误，下同-->
+            <result property="name" column="i_name"/>
+        </association>
+    </resultMap>
+
+
+    <!--（一对一）根据人ID找人和身份证方式2：嵌套查询，查完从表（idcard）后，通过执行另外一个SQL映射语句来查主表（person）信息-->
+    <select id="getPersonWithIdCard2" resultMap="PersonResultMap2">
+        select * from person where id=#{id}
+     </select>
+    <!--使用resultMap映射实体类和字段之间的一一对应关系-->
+    <resultMap type="xyz.yuanwl.domain.Person" id="PersonResultMap2">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <!--column：这列将会作为参数传入到select指定的查询的列，这里是person表的主键；select：使用另一个查询的结果封装到property指明的对象中-->
+        <association property="idCard" column="id" select="getIdCard"/>
+    </resultMap>
+
+    <!--这个查询因为在Mapper接口中没有调用，所以不用定义方法，IDEA会报错，无视即可-->
+    <select id="getIdCard" resultType="xyz.yuanwl.domain.IdCard">
+        SELECT * FROM id_card WHERE person_id = #{id}
+     </select>
+
+    <!--（一对多）根据人ID找人和持有银行卡方式1：道理和一对一的差不多。也可以用类似上面的方式2来做一对多，道理差不多，就不重复写了-->
+    <select id="getPersonWithBankCards" resultMap="PersonResultMap3">
+        select p.*, b.id as b_id, b.name as b_name from person p, bank_card b where p.id = b.person_id and p.id = #{id}
+    </select>
+    <resultMap id="PersonResultMap3" type="xyz.yuanwl.domain.Person">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <!--用collection标签来解决一对多的关联查询，ofType属性指定集合中元素的对象类型-->
+        <collection property="bankCards" ofType="xyz.yuanwl.domain.BankCard">
+            <id property="id" column="b_id"/>
+            <result property="name" column="b_name"/>
+        </collection>
+    </resultMap>
+
+    <!--一对一和一对多结合使用，就是把上面的两个方式1结合起来用-->
+    <select id="getPersonWithAllInfo" resultMap="PersonResultMap4">
+        select p.*, i.id as i_id, i.name as i_name, b.id as b_id, b.name as b_name
+        from person p, id_card i, bank_card b
+        where p.id = i.person_id and p.id = b.person_id and p.id = #{id}
+    </select>
+    <resultMap id="PersonResultMap4" type="xyz.yuanwl.domain.Person">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <association property="idCard" javaType="xyz.yuanwl.domain.IdCard">
+            <id property="id" column="i_id"/>
+            <result property="name" column="i_name"/>
+        </association>
+        <collection property="bankCards" ofType="xyz.yuanwl.domain.BankCard">
+            <id property="id" column="b_id"/>
+            <result property="name" column="b_name"/>
+        </collection>
+    </resultMap>
+</mapper>

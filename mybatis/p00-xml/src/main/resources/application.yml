@@ -1,0 +1,25 @@
+# 设置mapper的日志级别，观察打印的sql
+logging:
+  level:
+    xyz.yuanwl.domain: debug
+
+
+spring:
+  # mysql数据源配置
+  datasource:
+    # 新版驱动默认使用ssl，如果链接不是https，添加useSSL=false，避免报错
+    url: jdbc:mysql://127.0.0.1:3306/mybatis?useSSL=false
+    username: root
+    password: 111111
+    driver-class-name: com.mysql.jdbc.Driver
+
+# mybatis配置
+mybatis:
+  # 指定mapper映射xml文件的所在路径
+  mapper-locations: classpath:mapper/*.xml
+  # MyBaits 别名包扫描路径，通过该属性可以给包中的类注册别名，注册后在 Mapper 对应的 XML 文件中可以直接使用类名，
+  # 从而简化配置文件（比如parameterType、resultType只写User），若要定义多个package，可用逗号或分号分隔
+  type-aliases-package: xyz.yuanwl.domain
+  configuration:
+    # 下划线字段转对应驼峰命名属性
+    map-underscore-to-camel-case: true

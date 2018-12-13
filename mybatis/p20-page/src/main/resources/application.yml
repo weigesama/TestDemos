@@ -1,0 +1,29 @@
+# 设置mapper的日志级别，观察打印的sql
+logging:
+  level:
+    xyz.yuanwl.domain: debug
+
+
+spring:
+  # mysql数据源配置
+  datasource:
+    # 新版驱动默认使用ssl，如果链接不是https，添加useSSL=false，避免报错
+    url: jdbc:mysql://127.0.0.1:3306/mybatis?useSSL=false
+    username: root
+    password: 111111
+    driver-class-name: com.mysql.jdbc.Driver
+
+# mybatis配置
+mybatis:
+  # 指定mapper映射xml文件的所在路径
+  mapper-locations: classpath:mapper/*.xml
+  # 指定实体类的别名将要去除的前缀完整包名，在mapper配置文件中，可用去掉改包名的实体类名作为全类名的别名，
+  # 从而简化配置文件（比如parameterType、resultType只写User），若要定义多个package，可用逗号或分号分隔
+  type-aliases-package: xyz.yuanwl.domain
+
+# 分页参数（其实不定义也可以，有默认值）
+pagehelper:
+  helperDialect: mysql
+  reasonable: "true"
+  support-methods-arguments: "true" # 这里不加引号，springboot可能把true转换为boolean类型，代码里是强制转换为字符串的，会报错！
+  params: count=countSql # 这里count=countSql就是一个字符串

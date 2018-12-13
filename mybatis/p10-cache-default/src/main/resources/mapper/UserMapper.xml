@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.yuanwl.domain.UserMapper">
+    <!-- 删除用户 -->
+    <delete id="deleteUser">
+        delete from `user` where id=#{id}
+    </delete>
+
+    <!-- 查询全部用户 -->
+    <select id="getAllUsers" resultType="xyz.yuanwl.domain.User">
+        select * from `user`
+    </select>
+</mapper>

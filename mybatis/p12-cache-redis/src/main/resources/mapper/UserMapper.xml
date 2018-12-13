@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.yuanwl.domain.UserMapper">
+
+    <!--根据需求调整缓存参数。其中type指定了用 MybatisRedisCache 来缓存-->
+    <cache type="xyz.yuanwl.cache.MybatisRedisCache">
+        <property name="eviction" value="LRU" />
+        <property name="flushInterval" value="6000000" />
+        <property name="size" value="1024" />
+        <property name="readOnly" value="false" />
+    </cache>
+
+    <!--如果不需要进行缓存，添加设置useCache="false"-->
+    <select id="getUser" resultType="xyz.yuanwl.domain.User" useCache="false">
+        select * from `user` where id=#{id}
+    </select>
+
+    <select id="findUsersIn" resultType="xyz.yuanwl.domain.User">
+        select * from `user` where id in (${ids}) and name like '${name}'
+    </select>
+
+    <select id="getUserToMap" resultType="java.util.Map">
+        select * from `user` where id=#{id}
+    </select>
+
+    <insert id="addUser" parameterType="xyz.yuanwl.domain.User">
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <insert id="addUserAndSetId1" useGeneratedKeys="true" keyProperty="id">
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <insert id="addUserAndSetId2">
+        <selectKey resultType="java.lang.Integer" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <insert id="addUserAndSetId3">
+        <selectKey keyProperty="id" resultType="int" order="BEFORE">
+            select GOVNET_SEQ.nextVal from dual
+        </selectKey>
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <insert id="addUserByMap">
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <delete id="deleteUser">
+        delete from `user` where id=#{id}
+    </delete>
+
+    <update id="updateUser">
+        update `user` set name=#{name},age=#{age} where id=#{id}
+    </update>
+
+    <select id="getAllUsers" resultType="xyz.yuanwl.domain.User">
+        select * from `user`
+    </select>
+
+</mapper>

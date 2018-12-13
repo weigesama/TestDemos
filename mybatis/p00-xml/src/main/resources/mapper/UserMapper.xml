@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+为这个mapper指定一个唯一的namespace。namespace=对应接口全类名，否则报绑定错误。
+xml文件名可以和接口名不一样，但是为了方便维护，推荐设置成一样的名字。
+-->
+<mapper namespace="xyz.yuanwl.domain.UserMapper">
+    <!--
+        根据id查询一个user对象。
+        id属性值必须是唯一的，并且对应接口的方法。
+        resultType：从这条语句中返回的期望类型的类的完全限定名或别名。注意如果是集合情形，那应该是集合可以包含的类型，
+        而不能是集合本身。使用 resultType 或 resultMap 都可以，但不能同时使用。何时使用resultMap？可以看看OrderMapper.xml。
+        #{id}：告诉 MyBatis 创建一个预处理语句参数，通过 JDBC，这样的一个参数在 SQL 中会由一个“?”来标识，
+        这个会把传进来的参数转换为对应的类型变量，会检查类型，所以可以防止SQL注入。${}看下面。
+     -->
+    <select id="getUser" resultType="xyz.yuanwl.domain.User">
+        select * from `user` where id=#{id}
+    </select>
+
+    <!--${ids}、${name}拿传进来的参数直接替换语句的对应部分，不做类型转换和检查（即不转义替换），如果是前端直接传过来的参数，
+        有SQL注入风险，所以能用#{}的地方就不要用${}，但不是说不能用，像下面这种情况就要用。关于两者的区别自行百度
+     -->
+    <select id="findUsersIn" resultType="xyz.yuanwl.domain.User">
+        select * from `user` where id in (${ids}) and name like '${name}'
+    </select>
+
+    <!-- 根据id查询一个Map对象。resultType不能省略，否则会报错 -->
+    <select id="getUserToMap" resultType="java.util.Map">
+        select * from `user` where id=#{id}
+    </select>
+
+    <!-- 创建用户。注意返回值是成功插入多少条数据而不是Hibernate那样返回id！而且不会把id设置到参数对象里。如果需要id，看下面。
+        传入参数为User对象，在sql语句里，用 #{属性名} 即可引用对象的属性。
+        parameterType（默认值为unset）：将会传入这条语句的参数类的完全限定名或别名。这个属性是可选的（一般不写），
+        因为 MyBatis 可以通过 TypeHandler 推断出具体传入语句的参数。
+     -->
+    <insert id="addUser" parameterType="xyz.yuanwl.domain.User">
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <!-- 插入表并把生成id赋值到参数中的方式1（MySQL推荐用这个）。
+        useGeneratedKeys（默认值false）：设置是否使用JDBC的getGenereatedKeys方法获取主键并赋值到keyProperty设置的领域模型属性中。
+        MySQL和SQLServer执行auto-generated key field，因此当数据库设置好自增长主键后，可通过JDBC的getGeneratedKeys方法获取。
+        但像Oralce等不支持auto-generated key field的数据库就不能用这种方法获取主键了，要用方式3。
+        keyProperty：对应传入参数的主键，MyBatis 会通过 getGeneratedKeys 的返回值
+        或者通过 insert 语句的 selectKey 子元素设置它的键值。
+     -->
+    <insert id="addUserAndSetId1" useGeneratedKeys="true" keyProperty="id">
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <!-- 插入表并把生成id赋值到参数中的方式2。selectKey子句用来获取id。
+        order表示先执行插入主句，然后再调用子句获得最后一次插入成功后产生的id，赋值给参数对象，个人觉得比方式1慢。
+     -->
+    <insert id="addUserAndSetId2">
+        <selectKey resultType="Integer" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <!-- 插入表并把生成id赋值到参数中的方式3。针对Sequence主键而言，在执行insert sql前必须指定一个主键值给要插入的记录，
+        这种方式适用于Oracle、DB2
+     -->
+    <insert id="addUserAndSetId3">
+        <selectKey keyProperty="id" resultType="int" order="BEFORE">
+            select GOVNET_SEQ.nextVal from dual
+        </selectKey>
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <!-- 创建用户。可见，即使传入map，也可以不用parameterType -->
+    <insert id="addUserByMap">
+        insert into `user`(name,age) values(#{name},#{age})
+    </insert>
+
+    <!-- 删除用户 -->
+    <delete id="deleteUser">
+        delete from `user` where id=#{id}
+    </delete>
+
+    <!-- 修改用户 -->
+    <update id="updateUser">
+        update `user` set name=#{name},age=#{age} where id=#{id}
+    </update>
+
+    <!--定义sql片段
+        建议：对单表进行sql片段的抽取，方便重用，抽取时不包含where
+     -->
+    <sql id="findUserSql">
+        <if test="userCustomer!=null">
+            <if test="userCustomer.age!=null">
+                and age = #{userCustomer.age}
+            </if>
+            <if test="userCustomer.name!=null and userCustomer.name!=''">
+                and name like '%${userCustomer.name}%'
+            </if>
+        </if>
+    </sql>
+
+    <!-- 查询用户列表。必须用 resultType 或 resultMap 指明集合元素类型 -->
+    <select id="findUserList" resultType="xyz.yuanwl.domain.User">
+        select * from `user`
+        <!--where是动态sql标签，用法参考BlogMapper.xml-->
+        <where>
+            <!--引入上面定义的sql片段-->
+            <include refid="findUserSql"/>
+        </where>
+    </select>
+
+    <!--查找用户数量-->
+    <select id="findUserCount" resultType="Integer">
+        select count(*) from `user`
+        <where>
+            <include refid="findUserSql"/>
+        </where>
+    </select>
+
+
+</mapper>

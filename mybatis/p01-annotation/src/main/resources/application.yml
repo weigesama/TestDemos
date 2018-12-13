@@ -1,0 +1,13 @@
+# 设置mapper的日志级别，观察打印的sql
+logging:
+  level:
+    xyz.yuanwl.domain: debug
+
+spring:
+  # mysql数据源配置
+  datasource:
+    # 新版驱动默认使用ssl，如果链接不是https，添加useSSL=false，避免报错
+    url: jdbc:mysql://127.0.0.1:3306/mybatis?useSSL=false
+    username: root
+    password: 111111
+    driver-class-name: com.mysql.jdbc.Driver

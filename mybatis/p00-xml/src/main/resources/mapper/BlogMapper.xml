@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.yuanwl.domain.BlogMapper">
+
+    <resultMap id="BlogResultMap" type="xyz.yuanwl.domain.Blog">
+        <!--只定义需要手动映射的即可，其他字段回自动映射到同名属性-->
+        <result property="authorName" column="author_name"/>
+    </resultMap>
+
+    <!--if-->
+    <select id="findBlogUsingIf" resultMap="BlogResultMap">
+        SELECT * FROM blog
+        WHERE state = 'ACTIVE'
+        <if test="title != null"><!--如果传入的title不为空，这个子句才会拼接到sql中-->
+            AND title like '%${title}%'
+        </if>
+        <if test="author != null and author.name != null">
+            AND author_name like '%${author.name}%'
+        </if>
+    </select>
+
+    <!--choose、when、otherwise，分别对应java的switch、case、default-->
+    <select id="findBlogUsingChoose" resultMap="BlogResultMap">
+        SELECT * FROM BLOG WHERE state = 'ACTIVE'
+        <choose>
+            <when test="title != null">
+                AND title like '%${title}%'
+            </when>
+            <when test="author != null and author.name != null">
+                AND author_name like '%${author.name}%'
+            </when>
+            <otherwise>
+                AND featured = 1
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--trim：自动拼接where语句。
+        prefix：生成语句的前缀，不用在前缀前后加空格；
+        prefixOverrides：生成语句后，去掉这里指定的第一个多余的字符串。|表示或，后面加空格是避免误删带有一样前缀的单词；
+        下面if里面的test，前后都不用加空格，mybatis会自动加上；
+     -->
+    <select id="findBlogUsingTrim" resultMap="BlogResultMap">
+        SELECT * FROM BLOG
+        <trim prefix="where" prefixOverrides="and |or ">
+            <if test="state != null">
+                AND state = #{state}
+            </if>
+            <if test="title != null">
+                AND title like '%${title}%'
+            </if>
+            <if test="author != null and author.name != null">
+                AND author_name like '%${author.name}%'
+            </if>
+        </trim>
+    </select>
+
+    <!--where：至少有一个if条件成真，才会生成where语句，并且会自动去掉第一个多余的“AND”货“OR”（不区分大小写）。
+        这里结果与上面的 <trim> 等效，更简单-->
+    <select id="findBlogUsingWhere" resultMap="BlogResultMap">
+        SELECT * FROM BLOG
+        <where>
+            <if test="state != null">
+                AND state = #{state}
+            </if>
+            <if test="title != null">
+                AND title like '%${title}%'
+            </if>
+            <if test="author != null and author.name != null">
+                AND author_name like '%${author.name}%'
+            </if>
+        </where>
+    </select>
+
+    <!--trim：自动拼接set+where语句。
+        suffixOverrides：生成语句后，去掉最后一个指定的多余的字符串；
+        suffix：后缀，前后不用加空格；
+        测试发现，如果所有if都不成立，会报错。
+     -->
+    <update id="updateBlogUsingTrim">
+        update blog
+        <trim prefix="set" suffixOverrides="," suffix="where id = #{id}">
+            <if test="state != null">state = #{state},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="author != null and author.name != null">author_name = #{author.name},</if>
+            <if test="featured != null">featured = #{featured},</if>
+        </trim>
+    </update>
+
+    <!--set：自动拼接set语句，这里与上面的trim等效，更简单。与where差不多，会自动去掉最后一个多余的逗号。测试发现，如果所有if都不成立，同样会报错-->
+    <update id="updateBlogUsingSet">
+        update blog
+        <set>
+            <if test="state != null">state = #{state},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="author != null and author.name != null">author_name = #{author.name},</if>
+            <if test="featured != null">featured = #{featured},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--foreach（单个参数）：指定一个集合，声明可以在元素体内使用的集合项（item）和索引（index）变量。它也允许你指定开头与结尾的字符串以及在迭代结果之间放置分隔符。
+        这个元素是很智能的，因此它不会偶然地附加多余的分隔符。你可以将任何可迭代对象（如 List、Set 等）、Map 对象或者数组对象传递给 foreach 作为集合参数。
+        当使用可迭代对象或者数组时，index 是当前迭代的次数，item 的值是本次迭代获取的元素。当使用 Map 对象（或者 Map.Entry 对象的集合）时，index 是键，item 是值。
+     -->
+    <select id="findBlogUsingForeach" resultMap="BlogResultMap">
+        SELECT * FROM blog WHERE ID in
+        <!--collection：不是参数名，而是指参数类型，可选值为array、list。默认情况下，Mapper方法只能穿单个参数进来-->
+        <foreach item="item" index="index" collection="array"
+                 open="(" separator="," close=")">
+            #{item} <!--这里只是引用foreach元素里的item，不是指传进来的参数-->
+        </foreach>
+    </select>
+
+    <!--foreach（多个参数）：参考 https://blog.csdn.net/hjh908778/article/details/79034395/ -->
+    <select id="findBlogUsingForeachMap" resultMap="BlogResultMap">
+        SELECT * FROM blog where title like "%"#{title}"%" and id in
+        <foreach collection="ids" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!--bind：可以从 OGNL 表达式中创建一个变量并将其绑定到上下文-->
+    <select id="findBlogUsingBind" resultMap="BlogResultMap">
+        <bind name="pattern" value="'%' + _parameter.title + '%'" />
+        SELECT * FROM BLOG
+        WHERE title LIKE #{pattern}
+    </select>
+</mapper>
